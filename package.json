@@ -1,0 +1,30 @@
+{
+  "name": "healthmitra",
+  "version": "1.0.0",
+  "description": "HealthMitra - Digital Health Companion for underserved communities",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "build": "npm run client:build && npm run server:build",
+    "client:dev": "cd client && npm run dev",
+    "client:build": "cd client && npm run build",
+    "server:dev": "cd server && npm run dev",
+    "server:build": "cd server && npm run build",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "test": "npm run client:test && npm run server:test",
+    "client:test": "cd client && npm test",
+    "server:test": "cd server && npm test"
+  },
+  "keywords": [
+    "health",
+    "mern",
+    "digital-health",
+    "medical-records",
+    "ai-health"
+  ],
+  "author": "DataBuddies LK",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

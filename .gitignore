@@ -1,0 +1,59 @@
+# ----------------------------------------------------------------------
+# DEPENDENCIES AND NODE.JS ARTIFACTS
+# These files and directories are generated when you run 'npm install'
+# and should not be committed to Git.
+# ----------------------------------------------------------------------
+/node_modules
+/package-lock.json
+
+# Dependencies within sub-directories (for both client and server)
+# These are crucial since your run command uses 'cd client && npm install && cd ../server && npm install'
+client/node_modules
+client/package-lock.json
+server/node_modules
+server/package-lock.json
+
+# Yarn
+/yarn.lock
+/client/yarn.lock
+/server/yarn.lock
+
+# ----------------------------------------------------------------------
+# BUILD/OUTPUT DIRECTORIES
+# These are generated when you build the client for production or
+# when the server compiles its code (e.g., using TypeScript).
+# ----------------------------------------------------------------------
+/dist
+/build
+/out
+/client/build # The typical output folder for a React app
+
+# ----------------------------------------------------------------------
+# LOGS AND DEBUGGING
+# ----------------------------------------------------------------------
+# npm logs
+npm-debug.log*
+.npm
+/client/npm-debug.log*
+/server/npm-debug.log*
+
+# VS Code/IDE files
+.vscode/
+.idea/
+
+# ----------------------------------------------------------------------
+# SENSITIVE DATA AND ENVIRONMENT VARIABLES
+# These files contain passwords, API keys, or configurations specific
+# to your local environment and must NEVER be committed.
+# ----------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+/server/.env # Specific to the server, where most sensitive keys reside
+
+# ----------------------------------------------------------------------
+# OS AND MISCELLANEOUS FILES
+# System-generated files for various operating systems.
+# ----------------------------------------------------------------------
+.DS_Store # macOS
+Thumbs.db # Windows
