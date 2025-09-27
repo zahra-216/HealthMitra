@@ -5,13 +5,11 @@ import Badge from '../ui/Badge'
 
 interface RiskBadgeProps {
   risk: 'low' | 'medium' | 'high' | 'critical'
-  size?: 'sm' | 'md' | 'lg'
   showIcon?: boolean
 }
 
 const RiskBadge: React.FC<RiskBadgeProps> = ({ 
   risk, 
-  size = 'md',
   showIcon = true 
 }) => {
   const getRiskConfig = () => {

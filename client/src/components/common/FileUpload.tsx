@@ -1,7 +1,7 @@
 // client/src/components/common/FileUpload.tsx
 import React, { useRef, useState } from "react";
-import { Upload, X, FileText, Image } from "lucide-react";
-import Button from "../ui/Button";
+import { Upload } from "lucide-react"; // Removed FileText as it's not being used
+//import Button from "../ui/Button";
 
 interface FileUploadProps {
   onFileSelect: (files: FileList) => void;
