@@ -15,7 +15,10 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    
+
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
     // types property
     "types": ["node", "vite/client"],
 
@@ -26,12 +29,12 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Paths */
-    "baseUrl": ".", 
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]      
+      "@/*": ["./src/*"]
     }
   },
-  
-  "include": ["src"], 
-  "references": [{ "path": "./tsconfig.node.json" }] 
+
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

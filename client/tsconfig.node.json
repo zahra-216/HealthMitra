@@ -7,5 +7,5 @@
     "allowSyntheticDefaultImports": true,
     "allowJs": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["vite.config.ts", "vitest.config.ts", "*.config.ts"]
 }
