@@ -1,7 +1,6 @@
 // server/src/models/HealthRecord.model.js
 const mongoose = require("mongoose");
 
-// Sub-schema for files (uploaded to Cloudinary)
 const FileSchema = new mongoose.Schema(
   {
     url: { type: String, required: true },
@@ -9,12 +8,11 @@ const FileSchema = new mongoose.Schema(
     originalName: String,
     mimeType: String,
     size: Number,
-    ocrText: String, // Stored OCR text from health.controller.js
+    ocrText: String, // OCR text if extracted
   },
   { _id: false }
 );
 
-// Sub-schema for sharing data (used in user.controller.js)
 const SharedWithSchema = new mongoose.Schema(
   {
     userId: {
@@ -39,7 +37,7 @@ const HealthRecordSchema = new mongoose.Schema(
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      default: null, // Used for population in health.controller.js
+      default: null,
     },
     type: {
       type: String,
@@ -51,36 +49,20 @@ const HealthRecordSchema = new mongoose.Schema(
         "DIAGNOSIS",
         "OTHER",
         "vital_signs",
-      ], // Added 'vital_signs' from health.controller.js
+      ],
       required: true,
     },
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    description: {
-      type: String,
-      trim: true,
-    },
-    recordDate: {
-      type: Date,
-      required: true,
-    },
+    title: { type: String, required: true, trim: true },
+    description: { type: String, trim: true },
+    recordDate: { type: Date, required: true },
     tags: [String],
-    metadata: mongoose.Schema.Types.Mixed, // Stores specific data like Vitals
-    files: [FileSchema], // Array of uploaded files
-    isPrivate: {
-      type: Boolean,
-      default: true, // Used in user.controller.js logic
-    },
-    sharedWith: [SharedWithSchema], // Used in user.controller.js logic
+    metadata: mongoose.Schema.Types.Mixed,
+    files: [FileSchema],
+    isPrivate: { type: Boolean, default: true },
+    sharedWith: [SharedWithSchema],
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 const HealthRecord = mongoose.model("HealthRecord", HealthRecordSchema);
-
 module.exports = HealthRecord;

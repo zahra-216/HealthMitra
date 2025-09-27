@@ -91,6 +91,9 @@ app.use("/api/health", authMiddleware, healthRoutes);
 app.use("/api/ai", authMiddleware, aiRoutes);
 app.use("/api/notifications", authMiddleware, notificationRoutes);
 
+// Add alias so client calling /api/health-records continues to work:
+app.use("/api/health-records", authMiddleware, healthRoutes);
+
 // ------------------- Error Handling -------------------
 app.use(errorMiddleware);
 

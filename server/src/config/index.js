@@ -3,5 +3,5 @@ module.exports = {
   database: require("./database"),
   jwt: require("./jwt"),
   cloudinary: require("./cloudinary"),
-  twilio: require("./twilio"),
+  // twilio: require("./twilio"), // disable for now
 };

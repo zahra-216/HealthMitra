@@ -4,34 +4,30 @@ const { User } = require("../models");
 const { jwt: jwtConfig } = require("../config");
 const { smsService } = require("../services");
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, jwtConfig.secret, {
-    expiresIn: jwtConfig.expiresIn,
-  });
-};
+// -------- Helper functions --------
+const generateToken = (userId) =>
+  jwt.sign({ userId }, jwtConfig.secret, { expiresIn: jwtConfig.expiresIn });
 
-const generateRefreshToken = (userId) => {
-  return jwt.sign({ userId }, jwtConfig.secret, {
+const generateRefreshToken = (userId) =>
+  jwt.sign({ userId }, jwtConfig.secret, {
     expiresIn: jwtConfig.refreshExpiresIn,
   });
-};
 
+// -------- Controllers --------
+
+// Register a new user
 const register = async (req, res) => {
   try {
     const { firstName, lastName, email, phone, password, role } = req.body;
 
-    // Check if user exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { phone }],
-    });
-
+    // Check duplicates
+    const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
     if (existingUser) {
-      return res.status(400).json({
-        message: "User already exists with this email or phone number",
-      });
+      return res
+        .status(400)
+        .json({ message: "User already exists with this email or phone" });
     }
 
-    // Create new user
     const user = new User({
       firstName,
       lastName,
@@ -47,95 +43,87 @@ const register = async (req, res) => {
     const token = generateToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
-    // Send welcome SMS
-    try {
-      await smsService.sendSMS(
-        phone,
-        `Welcome to HealthMitra! Your account has been created successfully. Start managing your health records today.`
-      );
-    } catch (smsError) {
-      console.error("Failed to send welcome SMS:", smsError);
+    // Send SMS notification (non-blocking, dummy in dev)
+    if (phone) {
+      smsService
+        .sendSMS(
+          phone,
+          "Welcome to HealthMitra! Your account has been created successfully."
+        )
+        .catch((err) => console.error("SMS sending failed:", err.message));
     }
 
-    // Return user data (excluding password)
     const userResponse = user.toObject();
     delete userResponse.password;
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "User registered successfully",
       user: userResponse,
       token,
       refreshToken,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error during registration",
-        error: error.message,
-      });
+    return res.status(500).json({
+      message: "Server error during registration",
+      error: error.message,
+    });
   }
 };
 
+// User login
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
     const user = await User.findOne({ email });
-
-    if (!user) {
+    if (!user || !(await user.comparePassword(password))) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
-
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    // Check if account is active
     if (!user.isActive) {
-      return res.status(400).json({ message: "Account is deactivated" });
+      return res.status(403).json({ message: "Account is deactivated" });
     }
 
-    // Update last login
     user.lastLogin = new Date();
     await user.save();
 
-    // Generate tokens
     const token = generateToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
-    // Return user data (excluding password)
     const userResponse = user.toObject();
     delete userResponse.password;
 
-    res.json({
+    return res.json({
       message: "Login successful",
       user: userResponse,
       token,
       refreshToken,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Server error during login", error: error.message });
+    return res.status(500).json({
+      message: "Server error during login",
+      error: error.message,
+    });
   }
 };
 
+// Get profile
 const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
-    res.json({ user });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    return res.json({ user });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Server error fetching profile", error: error.message });
+    return res.status(500).json({
+      message: "Server error fetching profile",
+      error: error.message,
+    });
   }
 };
 
+// Update profile
 const updateProfile = async (req, res) => {
   try {
     const updates = req.body;
@@ -145,21 +133,26 @@ const updateProfile = async (req, res) => {
       { new: true, runValidators: true }
     ).select("-password");
 
-    res.json({
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.json({
       message: "Profile updated successfully",
       user,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Server error updating profile", error: error.message });
+    return res.status(500).json({
+      message: "Server error updating profile",
+      error: error.message,
+    });
   }
 };
 
+// Refresh access token
 const refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
-
     if (!refreshToken) {
       return res.status(401).json({ message: "Refresh token required" });
     }
@@ -174,12 +167,14 @@ const refreshToken = async (req, res) => {
     const newToken = generateToken(user._id);
     const newRefreshToken = generateRefreshToken(user._id);
 
-    res.json({
+    return res.json({
       token: newToken,
       refreshToken: newRefreshToken,
     });
   } catch (error) {
-    res.status(401).json({ message: "Invalid refresh token" });
+    return res
+      .status(401)
+      .json({ message: "Invalid or expired refresh token" });
   }
 };
 

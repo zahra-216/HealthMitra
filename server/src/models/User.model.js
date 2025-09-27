@@ -6,33 +6,32 @@ const userSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
-      required: [true, "First name is required."],
+      required: [true, "First name is required"],
       trim: true,
     },
     lastName: {
       type: String,
-      required: [true, "Last name is required."],
+      required: [true, "Last name is required"],
       trim: true,
     },
     email: {
       type: String,
-      required: [true, "Email is required."],
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
     },
-    // Added based on auth.controller.js logic
     phone: {
       type: String,
       unique: true,
-      sparse: true, // Allows null values to not violate unique constraint
+      sparse: true,
       trim: true,
     },
     password: {
       type: String,
-      required: [true, "Password is required."],
-      minlength: [6, "Password must be at least 6 characters."],
-      select: false, // Don't return the password hash by default
+      required: [true, "Password is required"],
+      minlength: [6, "Password must be at least 6 characters"],
+      select: false,
     },
     role: {
       type: String,
@@ -41,12 +40,9 @@ const userSchema = new mongoose.Schema(
     },
     isActive: {
       type: Boolean,
-      default: true, // Used in both auth.middleware.js and auth.controller.js
+      default: true,
     },
-    lastLogin: {
-      type: Date, // Used in login function
-    },
-    // Assumed for profile features (feel free to update these as you build)
+    lastLogin: Date,
     profilePictureUrl: String,
     dateOfBirth: Date,
     gender: {
@@ -54,12 +50,10 @@ const userSchema = new mongoose.Schema(
       enum: ["male", "female", "other"],
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Mongoose Pre-save hook to hash the password
+// Hash password before save
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
@@ -67,9 +61,8 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// Instance method for password comparison (required by login in auth.controller.js)
+// Compare password
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  // Explicitly select the password field as it is `select: false`
   const user = await mongoose
     .model("User")
     .findById(this._id)

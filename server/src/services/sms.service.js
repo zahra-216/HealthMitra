@@ -1,18 +1,13 @@
 // server/src/services/sms.service.js
-const { client, phoneNumber } = require("../config/twilio");
+// Dummy SMS service for development (no Twilio needed)
 
 const sendSMS = async (to, message) => {
   try {
-    const result = await client.messages.create({
-      body: message,
-      from: phoneNumber,
-      to: to,
-    });
-
-    console.log(`SMS sent successfully: ${result.sid}`);
-    return result;
+    console.log(`[SMS Service] Sending SMS to ${to}: "${message}"`);
+    // Simulate async delay
+    return { sid: `dummy-${Date.now()}`, to, message };
   } catch (error) {
-    console.error("SMS sending failed:", error);
+    console.error("[SMS Service] Failed to send SMS:", error.message);
     throw error;
   }
 };
@@ -33,7 +28,7 @@ const sendBulkSMS = async (recipients, message) => {
 };
 
 const sendMedicationReminder = async (phone, medicationName, dosage, time) => {
-  const message = `🏥 HealthMitra Reminder: Time to take your ${medicationName} (${dosage}) at ${time}. Take care of your health! Reply STOP to opt out.`;
+  const message = `🏥 HealthMitra Reminder: Take your ${medicationName} (${dosage}) at ${time}.`;
   return await sendSMS(phone, message);
 };
 
@@ -43,14 +38,14 @@ const sendAppointmentReminder = async (
   appointmentTime,
   location
 ) => {
-  const message = `🏥 HealthMitra: Appointment reminder with Dr. ${doctorName} at ${appointmentTime}, ${location}. Please arrive 15 minutes early. Reply STOP to opt out.`;
+  const message = `🏥 HealthMitra: Appointment with Dr. ${doctorName} at ${appointmentTime}, ${location}.`;
   return await sendSMS(phone, message);
 };
 
 const sendHealthAlert = async (phone, alertMessage, severity = "medium") => {
   const urgencyPrefix =
     severity === "high" || severity === "critical" ? "🚨 URGENT" : "⚠️";
-  const message = `${urgencyPrefix} HealthMitra Health Alert: ${alertMessage}. Please consult your healthcare provider. This is an automated message.`;
+  const message = `${urgencyPrefix} HealthMitra Alert: ${alertMessage}`;
   return await sendSMS(phone, message);
 };
 

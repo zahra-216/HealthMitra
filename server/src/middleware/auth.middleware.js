@@ -3,17 +3,14 @@ const jwt = require("jsonwebtoken");
 const { User } = require("../models");
 const { jwt: jwtConfig } = require("../config");
 
-/**
- * Authentication middleware
- * Validates JWT and attaches user to request.
- */
+// -------- Authentication middleware --------
 const authMiddleware = async (req, res, next) => {
   try {
     const token = req.header("Authorization")?.replace("Bearer ", "");
     if (!token) {
       return res
         .status(401)
-        .json({ message: "Access denied. No token provided." });
+        .json({ message: "No token provided. Access denied." });
     }
 
     const decoded = jwt.verify(token, jwtConfig.secret);
@@ -22,11 +19,11 @@ const authMiddleware = async (req, res, next) => {
     if (!user) {
       return res
         .status(401)
-        .json({ message: "Invalid token. User not found." });
+        .json({ message: "Invalid token: user not found." });
     }
 
     if (!user.isActive) {
-      return res.status(401).json({ message: "Account is deactivated." });
+      return res.status(403).json({ message: "Account is deactivated." });
     }
 
     req.user = user;
@@ -38,14 +35,13 @@ const authMiddleware = async (req, res, next) => {
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({ message: "Token expired." });
     }
-    res.status(500).json({ message: "Server error during authentication." });
+    return res
+      .status(500)
+      .json({ message: "Server error during authentication." });
   }
 };
 
-/**
- * Role-based access middleware
- * Allows only users with specific roles.
- */
+// -------- Role-based access middleware --------
 const roleMiddleware = (roles) => {
   return (req, res, next) => {
     if (!req.user) {

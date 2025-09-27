@@ -3,17 +3,18 @@ const { HealthRecord, AIInsight } = require("../models");
 const { uploadToCloudinary } = require("../middleware/upload.middleware");
 const { ocrService, aiService } = require("../services");
 
+/**
+ * Create a new health record
+ */
 const createHealthRecord = async (req, res) => {
   try {
     const { type, title, description, recordDate, tags, metadata } = req.body;
     const files = req.files || [];
-
-    // Upload files to Cloudinary and extract OCR text
     const uploadedFiles = [];
 
+    // Upload files to Cloudinary + run OCR if image
     for (const file of files) {
       try {
-        // Upload to Cloudinary
         const uploadResult = await uploadToCloudinary(file.buffer, {
           public_id: `health_records/${req.user._id}/${Date.now()}_${
             file.originalname
@@ -21,13 +22,11 @@ const createHealthRecord = async (req, res) => {
         });
 
         let ocrText = null;
-
-        // Extract text using OCR for images
-        if (file.mimetype.startsWith("image/")) {
+        if (file.mimetype?.startsWith("image/")) {
           try {
             ocrText = await ocrService.extractText(file.buffer);
           } catch (ocrError) {
-            console.error("OCR extraction failed:", ocrError);
+            console.error("OCR extraction failed:", ocrError.message);
           }
         }
 
@@ -40,7 +39,7 @@ const createHealthRecord = async (req, res) => {
           ocrText,
         });
       } catch (uploadError) {
-        console.error("File upload failed:", uploadError);
+        console.error("File upload failed:", uploadError.message);
       }
     }
 
@@ -51,46 +50,46 @@ const createHealthRecord = async (req, res) => {
       title,
       description,
       files: uploadedFiles,
-      metadata: JSON.parse(metadata || "{}"),
+      metadata: metadata ? JSON.parse(metadata) : {},
       recordDate: recordDate || new Date(),
-      tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
+      tags: tags ? tags.split(",").map((t) => t.trim()) : [],
     });
 
     await healthRecord.save();
 
-    // Generate AI insights for the new record
+    // Generate AI insights (non-blocking)
     try {
-      await aiService.generateHealthInsights(req.user._id, healthRecord);
+      aiService.generateHealthInsights(req.user._id, healthRecord);
     } catch (aiError) {
-      console.error("AI insight generation failed:", aiError);
+      console.error("AI insight generation failed:", aiError.message);
     }
 
     await healthRecord.populate("doctorId", "firstName lastName");
 
     res.status(201).json({
+      success: true,
       message: "Health record created successfully",
       record: healthRecord,
     });
   } catch (error) {
+    console.error("Error in createHealthRecord:", error.message);
     res.status(500).json({
+      success: false,
       message: "Server error creating health record",
-      error: error.message,
     });
   }
 };
 
+/**
+ * Get all health records with filters & pagination
+ */
 const getHealthRecords = async (req, res) => {
   try {
     const { type, page = 1, limit = 10, search } = req.query;
     const skip = (page - 1) * limit;
 
-    // Build query
     const query = { userId: req.user._id };
-
-    if (type) {
-      query.type = type;
-    }
-
+    if (type) query.type = type;
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: "i" } },
@@ -99,15 +98,17 @@ const getHealthRecords = async (req, res) => {
       ];
     }
 
-    const records = await HealthRecord.find(query)
-      .populate("doctorId", "firstName lastName")
-      .sort({ recordDate: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await HealthRecord.countDocuments(query);
+    const [records, total] = await Promise.all([
+      HealthRecord.find(query)
+        .populate("doctorId", "firstName lastName")
+        .sort({ recordDate: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      HealthRecord.countDocuments(query),
+    ]);
 
     res.json({
+      success: true,
       records,
       pagination: {
         current: parseInt(page),
@@ -116,13 +117,17 @@ const getHealthRecords = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Error in getHealthRecords:", error.message);
     res.status(500).json({
+      success: false,
       message: "Server error fetching health records",
-      error: error.message,
     });
   }
 };
 
+/**
+ * Get a single health record by ID
+ */
 const getHealthRecord = async (req, res) => {
   try {
     const record = await HealthRecord.findOne({
@@ -131,22 +136,27 @@ const getHealthRecord = async (req, res) => {
     }).populate("doctorId", "firstName lastName");
 
     if (!record) {
-      return res.status(404).json({ message: "Health record not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Health record not found" });
     }
 
-    res.json({ record });
+    res.json({ success: true, record });
   } catch (error) {
+    console.error("Error in getHealthRecord:", error.message);
     res.status(500).json({
+      success: false,
       message: "Server error fetching health record",
-      error: error.message,
     });
   }
 };
 
+/**
+ * Update a health record
+ */
 const updateHealthRecord = async (req, res) => {
   try {
     const updates = req.body;
-
     const record = await HealthRecord.findOneAndUpdate(
       { _id: req.params.id, userId: req.user._id },
       { $set: updates },
@@ -154,21 +164,28 @@ const updateHealthRecord = async (req, res) => {
     ).populate("doctorId", "firstName lastName");
 
     if (!record) {
-      return res.status(404).json({ message: "Health record not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Health record not found" });
     }
 
     res.json({
+      success: true,
       message: "Health record updated successfully",
       record,
     });
   } catch (error) {
+    console.error("Error in updateHealthRecord:", error.message);
     res.status(500).json({
+      success: false,
       message: "Server error updating health record",
-      error: error.message,
     });
   }
 };
 
+/**
+ * Delete a health record
+ */
 const deleteHealthRecord = async (req, res) => {
   try {
     const record = await HealthRecord.findOneAndDelete({
@@ -177,24 +194,29 @@ const deleteHealthRecord = async (req, res) => {
     });
 
     if (!record) {
-      return res.status(404).json({ message: "Health record not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Health record not found" });
     }
 
-    // TODO: Delete files from Cloudinary
-    // This would require implementing cloudinary deletion
+    // TODO: Delete files from Cloudinary (if needed)
 
-    res.json({ message: "Health record deleted successfully" });
+    res.json({ success: true, message: "Health record deleted successfully" });
   } catch (error) {
+    console.error("Error in deleteHealthRecord:", error.message);
     res.status(500).json({
+      success: false,
       message: "Server error deleting health record",
-      error: error.message,
     });
   }
 };
 
+/**
+ * Get health summary with counts, recent vitals, and AI insights
+ */
 const getHealthSummary = async (req, res) => {
   try {
-    const pipeline = [
+    const summary = await HealthRecord.aggregate([
       { $match: { userId: req.user._id } },
       {
         $group: {
@@ -203,17 +225,13 @@ const getHealthSummary = async (req, res) => {
           latest: { $max: "$recordDate" },
         },
       },
-    ];
+    ]);
 
-    const summary = await HealthRecord.aggregate(pipeline);
-
-    // Get recent vital signs
     const recentVitals = await HealthRecord.findOne({
       userId: req.user._id,
       type: "vital_signs",
     }).sort({ recordDate: -1 });
 
-    // Get active AI insights
     const insights = await AIInsight.find({
       userId: req.user._id,
       isActive: true,
@@ -223,14 +241,16 @@ const getHealthSummary = async (req, res) => {
       .limit(5);
 
     res.json({
+      success: true,
       summary,
       recentVitals: recentVitals?.metadata?.vitals || null,
       insights,
     });
   } catch (error) {
+    console.error("Error in getHealthSummary:", error.message);
     res.status(500).json({
+      success: false,
       message: "Server error fetching health summary",
-      error: error.message,
     });
   }
 };

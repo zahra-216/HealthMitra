@@ -7,28 +7,38 @@ const NotificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
+      index: true, // Optimizes queries by user
     },
     message: {
       type: String,
-      required: true,
+      required: [true, "Notification message is required"],
+      trim: true,
     },
     type: {
       type: String,
       enum: ["system", "alert", "reminder", "insight"],
       default: "system",
     },
-    link: String, // Optional deep link within the app
+    link: {
+      type: String,
+      trim: true, // Optional deep link within app
+    },
     isRead: {
       type: Boolean,
       default: false,
+      index: true, // For filtering unread notifications
     },
-    scheduledTime: Date, // For reminders or time-sensitive alerts
+    scheduledTime: {
+      type: Date, // For reminders or time-sensitive notifications
+    },
   },
   {
-    timestamps: true,
+    timestamps: true, // Adds createdAt and updatedAt
   }
 );
+
+// Optional: compound index for faster filtering by user and unread status
+NotificationSchema.index({ userId: 1, isRead: 1 });
 
 const Notification = mongoose.model("Notification", NotificationSchema);
 

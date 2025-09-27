@@ -9,14 +9,9 @@ const AIInsightSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    title: {
-      type: String,
-      required: true,
-    },
-    message: {
-      type: String,
-      required: true,
-    },
+    title: { type: String, required: true },
+    message: { type: String, required: true },
+
     severity: {
       type: String,
       enum: ["low", "medium", "high", "critical"],
@@ -33,30 +28,20 @@ const AIInsightSchema = new mongoose.Schema(
       ],
       required: true,
     },
-    isRead: {
-      type: Boolean,
-      default: false, // Used in both health and ai controllers
-    },
-    isActive: {
-      type: Boolean,
-      default: true, // Used in health.controller.js for filtering active insights
-    },
-    readAt: {
-      type: Date, // Used in markInsightAsRead in ai.controller.js
-    },
+
+    isRead: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
+    readAt: { type: Date },
+
     dataUsed: [
       {
-        dataType: String,
-        value: String,
-        recordId: { type: mongoose.Schema.Types.ObjectId, ref: "HealthRecord" }, // Used for population
+        dataType: { type: String },
+        value: { type: String },
+        recordId: { type: mongoose.Schema.Types.ObjectId, ref: "HealthRecord" },
       },
     ],
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-const AIInsight = mongoose.model("AIInsight", AIInsightSchema);
-
-module.exports = AIInsight;
+module.exports = mongoose.model("AIInsight", AIInsightSchema);

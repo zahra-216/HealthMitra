@@ -4,4 +4,5 @@ module.exports = {
   ocrService: require("./ocr.service"),
   aiService: require("./ai.service"),
   cronService: require("./cron.service"),
+  notificationService: require("./notification.service"),
 };
